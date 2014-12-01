@@ -5,7 +5,6 @@ require "logstash/namespace"
 require "net/http"
 require "net/https"
 require "uri"
-require "json"
 
 # Stream events from the CouchDB _changes URI.
 # Use event metadata to allow for upsert and
@@ -110,25 +109,17 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
     @feed         = 'continuous'
     @include_docs = 'true'
     @path         = '/' + @db + '/_changes'
-    @buffer       = FileWatch::BufferedTokenizer.new
-    
-    if @secure
-      @scheme = 'https'
-    else
-      @scheme = 'http'
-    end
-    
-    if @initial_sequence.nil?
-      @since = @sincedb.read
-    else
-      @since = @@initial_sequence
-    end
+
+    @scheme = @secure ? 'https' : 'http'
+
+    @since = @initial_sequence ? @initial_sequence : @sincedb.read
 
     if !@username.nil? and !@password.nil?
       @userinfo = @username + ':' + @password
     else
       @userinfo = nil
     end
+    
   end
   
   module SinceDB
@@ -138,12 +129,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
       end
 
       def read
-        if ::File.exists?(@sincedb_path)
-          since = ::File.read(@sincedb_path).chomp.strip
-        else
-          since = 0
-        end
-        return since
+        ::File.exists?(@sincedb_path) ? ::File.read(@sincedb_path).chomp.strip : 0
       end
 
       def write(since = nil)
@@ -155,68 +141,58 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
   
   public
   def run(queue)
-    begin
-      @logger.info("Connecting to CouchDB _changes stream at:", :host => @host.to_s, :port => @port.to_s, :db => @db)
-      uri = build_uri
-      Net::HTTP.start(@host, @port, :use_ssl => (@secure == true), :ca_file => @ca_file) do |http|
-        request = Net::HTTP::Get.new uri.request_uri
-        http.request request do |response|
-          response.read_body do |chunk|
-            @buffer.extract(chunk).each do |changes|
-              if !changes.chomp.empty?
-                event = build_event(JSON.parse(changes))
-                @logger.info("event", :event => event.to_hash_with_metadata)
-                if @decorate_event
-                  decorate(event)
-                end
-                if !event["empty"]
-                  queue << event
-                  @since = event['@metadata']['seq']
-                  @sincedb.write(@since.to_s)
-                end
-              end
+    buffer = FileWatch::BufferedTokenizer.new
+    @logger.info("Connecting to CouchDB _changes stream at:", :host => @host.to_s, :port => @port.to_s, :db => @db)
+    uri = build_uri
+    Net::HTTP.start(@host, @port, :use_ssl => (@secure == true), :ca_file => @ca_file) do |http|
+      request = Net::HTTP::Get.new(uri.request_uri)
+      http.request request do |response|
+        response.read_body do |chunk|
+          buffer.extract(chunk).each do |changes|
+            next if changes.chomp.empty?
+            event = build_event(changes)
+            @logger.debug("event", :event => event.to_hash_with_metadata) if @logger.debug?
+            if @decorate_event
+              decorate(event)
+            end
+            unless event["empty"]
+              queue << event
+              @since = event['@metadata']['seq']
+              @sincedb.write(@since.to_s)
             end
           end
         end
       end
-    rescue Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, EOFError, Errno::EHOSTUNREACH, Errno::ECONNREFUSED,
-      Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
-      @logger.error("Connection problem encountered: Retrying connection in 10 seconds...", :error => e.to_s)
-      keepalive = reconnect_test
-    rescue Errno::EBADF => f
-      @logger.error("Connction refused due to bad file descriptor: ", :error => f.to_s)
-      keepalive = reconnect_test
-    rescue Interrupt
-      @logger.info("Received SIGTERM. Shutting down...")
-      keepalive = false
-    end while keepalive == true
+    end
+  rescue Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, EOFError, Errno::EHOSTUNREACH, Errno::ECONNREFUSED,
+    Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
+    @logger.error("Connection problem encountered: Retrying connection in 10 seconds...", :error => e.to_s)
+    retry if reconnect_test
+  rescue Errno::EBADF => f
+    @logger.error("Connction refused due to bad file descriptor: ", :error => f.to_s)
+    retry if reconnect_test
+  rescue Interrupt
+    @logger.info("Received SIGTERM. Shutting down...")
   end
   
   private
   def build_uri
-    if @timeout.nil?
-      query = URI.encode_www_form(:feed => @feed, :include_docs => @include_docs, :heartbeat => @heartbeat, :since => @since)
-    else
-      query = URI.encode_www_form(:feed => @feed, :include_docs => @include_docs, :timeout => @timeout, :since => @since)
-    end
-    uri = URI::HTTP.build(:scheme => @scheme, :userinfo => @userinfo, :host => @host, :port => @port, :path => @path, :query => query)
-    return uri
+    options = {:feed => @feed, :include_docs => @include_docs, :since => @since}
+    options = options.merge(@timeout ? {:timeout => @timeout} : {:heartbeat => @heartbeat})
+    URI::HTTP.build(:scheme => @scheme, :userinfo => @userinfo, :host => @host, :port => @port, :path => @path, :query => URI.encode_www_form(options))
   end
 
   private
   def reconnect_test
-    if @always_reconnect
-      sleep @reconnect_delay
-      return true
-    else
-      return false
-    end
+    sleep(@always_reconnect ? @reconnect_delay : 0)
+    @always_reconnect
   end
 
   private
   def build_event(line)
     # In lieu of a codec, build the event here
-    return LogStash::Event.new({"empty"=>true}) if line.has_key?("last_seq")
+    line = LogStash::Json.load(line)
+    return LogStash::Event.new({"empty" => true}) if line.has_key?("last_seq")
     hash = Hash.new
     hash['@metadata'] = { '_id' => line['doc']['_id'] }
     if line['doc']['_deleted']
