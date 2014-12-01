@@ -1,3 +1,9 @@
 *.gem
 Gemfile.lock
+<<<<<<< HEAD
 .bundle
+=======
+Gemfile.bak
+.bundle
+vendor
+>>>>>>> 8eaba27afa8e330f5188ac98cad5e5c0324a18e6
