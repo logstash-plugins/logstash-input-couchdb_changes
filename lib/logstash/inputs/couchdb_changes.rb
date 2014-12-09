@@ -152,9 +152,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
             next if changes.chomp.empty?
             event = build_event(changes)
             @logger.debug("event", :event => event.to_hash_with_metadata) if @logger.debug?
-            if @decorate_event
-              decorate(event)
-            end
+            decorate(event) if @decorate_event
             unless event["empty"]
               queue << event
               @since = event['@metadata']['seq']
@@ -202,13 +200,11 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
       hash['@metadata']['action'] = 'update'
       hash['doc'].delete('_id')
       hash['doc_as_upsert'] = true
-      if !@keep_revision
-        hash['doc'].delete('_rev')
-      end
+      hash['doc'].delete('_rev') unless @keep_revision
     end
     hash['@metadata']['seq'] = line['seq']
     event = LogStash::Event.new(hash)
-    @logger.debug("event", :event => event.to_hash_with_metadata)
-    return event
+    @logger.debug("event", :event => event.to_hash_with_metadata) if @logger.debug?
+    event
   end
 end
