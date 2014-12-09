@@ -29,7 +29,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
   # Default: false (via http)
   config :secure, :validate => :boolean, :default => false
   
-  # Path to a CA certificate file, used to valid certificates
+  # Path to a CA certificate file, used to validate certificates
   config :ca_file, :validate => :path
 
   # Username, if authentication is needed to connect to 
