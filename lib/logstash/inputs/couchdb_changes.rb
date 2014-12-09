@@ -114,7 +114,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
 
     @since = @initial_sequence ? @initial_sequence : @sincedb.read
 
-    if !@username.nil? and !@password.nil?
+    if !@username.nil? && !@password.nil?
       @userinfo = @username + ':' + @password
     else
       @userinfo = nil
@@ -167,10 +167,10 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
   rescue Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, EOFError, Errno::EHOSTUNREACH, Errno::ECONNREFUSED,
     Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
     @logger.error("Connection problem encountered: Retrying connection in 10 seconds...", :error => e.to_s)
-    retry if reconnect_test
+    retry if reconnect?
   rescue Errno::EBADF => f
     @logger.error("Connction refused due to bad file descriptor: ", :error => f.to_s)
-    retry if reconnect_test
+    retry if reconnect?
   rescue Interrupt
     @logger.info("Received SIGTERM. Shutting down...")
   end
@@ -183,7 +183,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
   end
 
   private
-  def reconnect_test
+  def reconnect?
     sleep(@always_reconnect ? @reconnect_delay : 0)
     @always_reconnect
   end
