@@ -1,10 +1,10 @@
 # CouchDB Changes
 
-This plugin is for capturing the stream of the `_changes` API and feeding it into Logstash.  It's primary purpose for existence is to replace the CouchDB Elasticsearch River.
+This plugin is for capturing the stream of the `_changes` API and feeding it into Logstash.
 
 ## Testing
 
-This plugin, being intended to replace the CouchDB Elasticsearch River, has some requirements for testing.  Following normal dev installation procedure (i.e. `bundle install`), you must also have a CouchDB instance running on localhost.  In order to test SSL connectivity, a certificate, private key, and CA certificate have been provided.
+This plugin has some requirements for testing.  Following normal dev installation procedure (i.e. `bundle install`), you must also have a CouchDB instance running on localhost.  In order to test SSL connectivity, a certificate, private key, and CA certificate have been provided.
 
 ### CouchDB configuration
 
