@@ -35,7 +35,7 @@ Chances are that you will only need to add the `httpsd` line.  Be sure to put `h
 Launch CouchDB by calling the binary, or with your preferred method.  In the STDOUT or log file you should see something like this:
 
 ```
-couchdb
+$ couchdb
 Apache CouchDB 1.6.1 (LogLevel=info) is starting.
 Apache CouchDB has started. Time to relax.
 [info] [<0.31.0>] Apache CouchDB has started on http://127.0.0.1:5984/

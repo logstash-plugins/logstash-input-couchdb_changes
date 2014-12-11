@@ -3,7 +3,6 @@
 require "logstash/inputs/base"
 require "logstash/namespace"
 require "net/http"
-require "net/https"
 require "uri"
 
 # Stream events from the CouchDB _changes URI.
