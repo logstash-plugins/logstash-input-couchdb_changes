@@ -37,7 +37,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
 
   # Password, if authentication is needed to connect to 
   # CouchDB
-  config :password, :validate => :string, :default => nil
+  config :password, :validate => :password, :default => nil
   
   # Logstash connects to CouchDB's _changes with feed=continuous
   # The heartbeat is how often (in milliseconds) Logstash will ping
@@ -120,7 +120,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
     @since = @initial_sequence ? @initial_sequence : @sincedb.read
 
     if !@username.nil? && !@password.nil?
-      @userinfo = @username + ':' + @password
+      @userinfo = @username + ':' + @password.value
     else
       @userinfo = nil
     end
