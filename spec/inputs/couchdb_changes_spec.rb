@@ -90,8 +90,8 @@ module Helpers
   end
 end
     
-describe "inputs/couchdb_changes", :elasticsearch => true do
-  describe "Load couchdb documents", :elasticsearch => true do
+describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
+  describe "Load couchdb documents", :elasticsearch => true, :couchdb => true do
     include Helpers
     sincedb = "/tmp/.couchdb_seq"
     index = "couchdb_test"
@@ -158,7 +158,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true do
     end
   end
     
-  describe "Test document updates", :elasticsearch => true do
+  describe "Test document updates", :elasticsearch => true, :couchdb => true do
     include Helpers
     sincedb = "/tmp/.couchdb_seq"
     index = "couchdb_test"
@@ -224,7 +224,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true do
 
   end
 
-  describe "Test sincedb", :elasticsearch => true do
+  describe "Test sincedb", :elasticsearch => true, :couchdb => true do
     include Helpers
     sincedb = "/tmp/.couchdb_seq"
     index = "couchdb_test"
@@ -299,7 +299,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true do
 
   end
 
-  describe "Test document deletion", :elasticsearch => true do
+  describe "Test document deletion", :elasticsearch => true, :couchdb => true do
     include Helpers
     sincedb = "/tmp/.couchdb_seq"
     index = "couchdb_test"
@@ -362,7 +362,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true do
 
   end
 
-  describe "Test authenticated connectivity", :elasticsearch => true do
+  describe "Test authenticated connectivity", :elasticsearch => true, :couchdb => true do
     include Helpers
     user = "logstash"
     pass = "logstash"
@@ -428,7 +428,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true do
     end
   end
 
-  describe "Test Secure Connection", :elasticsearch => true do
+  describe "Test Secure Connection", :elasticsearch => true, :couchdb => true do
     include Helpers
     sincedb = "/tmp/.couchdb_seq"
     index = "couchdb_test"
