@@ -85,15 +85,15 @@ module Helpers
   def teardown
     deletedb
     deleteindex
-    sincedb = "/tmp/.couchdb_seq"
-    File.delete(sincedb) if File.exist?(sincedb)
+    sequence = "/tmp/.couchdb_seq"
+    File.delete(sequence) if File.exist?(sequence)
   end
 end
     
 describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
   describe "Load couchdb documents", :elasticsearch => true, :couchdb => true do
     include Helpers
-    sincedb = "/tmp/.couchdb_seq"
+    sequence = "/tmp/.couchdb_seq"
     index = "couchdb_test"
 
     before do
@@ -109,7 +109,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
         host => "127.0.0.1"
         timeout => 2000
         always_reconnect => false
-        sincedb_path => "#{sincedb}"
+        sequence_path => "#{sequence}"
         type => "couchdb"
       }
     }
@@ -160,7 +160,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
     
   describe "Test document updates", :elasticsearch => true, :couchdb => true do
     include Helpers
-    sincedb = "/tmp/.couchdb_seq"
+    sequence = "/tmp/.couchdb_seq"
     index = "couchdb_test"
 
     before do
@@ -177,7 +177,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
         host => "127.0.0.1"
         timeout => 2000
         always_reconnect => false
-        sincedb_path => "#{sincedb}"
+        sequence_path => "#{sequence}"
         type => "couchdb"
       }
     }
@@ -224,9 +224,9 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
 
   end
 
-  describe "Test sincedb", :elasticsearch => true, :couchdb => true do
+  describe "Test sequence", :elasticsearch => true, :couchdb => true do
     include Helpers
-    sincedb = "/tmp/.couchdb_seq"
+    sequence = "/tmp/.couchdb_seq"
     index = "couchdb_test"
     
     ftw = FTW::Agent.new
@@ -238,7 +238,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
         host => "127.0.0.1"
         timeout => 2000
         always_reconnect => false
-        sincedb_path => "#{sincedb}"
+        sequence_path => "#{sequence}"
         type => "couchdb"
       }
     }
@@ -258,9 +258,9 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
       buildup
       # And updates 3
       updatedocs
-      # But let's set sincedb to say we only read the 10th change
+      # But let's set sequence to say we only read the 10th change
       # so it will start with change #11
-      File.open(sincedb, 'w') { |file| file.write("10") }
+      File.open(sequence, 'w') { |file| file.write("10") }
     end
 
     agent do
@@ -271,7 +271,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
       response.read_body { |chunk| data << chunk }
       result = LogStash::Json.load(data)
       count = result["count"]
-      # We should only have 3 documents here because of the sincedb change
+      # We should only have 3 documents here because of the sequence change
       insist { count } == 3
       # Get the docs and do a couple more spot checks
       response = ftw.get!("http://127.0.0.1:9200/#{index}/_search?q=*&size=10")
@@ -289,8 +289,8 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
           insist { doc["_source"]["Alter-ego"] } == "Green Goblin"
         end
       end
-      # Logstash should have updated the sincedb to 13 after all this
-      insist { File.read(sincedb) } == "13"
+      # Logstash should have updated the sequence to 13 after all this
+      insist { File.read(sequence) } == "13"
     end
 
     after do
@@ -301,7 +301,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
 
   describe "Test document deletion", :elasticsearch => true, :couchdb => true do
     include Helpers
-    sincedb = "/tmp/.couchdb_seq"
+    sequence = "/tmp/.couchdb_seq"
     index = "couchdb_test"
 
     before do
@@ -318,7 +318,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
         host => "127.0.0.1"
         timeout => 2000
         always_reconnect => false
-        sincedb_path => "#{sincedb}"
+        sequence_path => "#{sequence}"
         type => "couchdb"
       }
     }
@@ -366,7 +366,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
     include Helpers
     user = "logstash"
     pass = "logstash"
-    sincedb = "/tmp/.couchdb_seq"
+    sequence = "/tmp/.couchdb_seq"
     index = "couchdb_test"
 
     before do
@@ -383,7 +383,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
         host => "127.0.0.1"
         timeout => 2000
         always_reconnect => false
-        sincedb_path => "#{sincedb}"
+        sequence_path => "#{sequence}"
         type => "couchdb"
         username => "#{user}"
         password => "#{pass}"
@@ -430,7 +430,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
 
   describe "Test Secure Connection", :elasticsearch => true, :couchdb => true do
     include Helpers
-    sincedb = "/tmp/.couchdb_seq"
+    sequence = "/tmp/.couchdb_seq"
     index = "couchdb_test"
     ca_file = File.dirname(__FILE__) + "/ca_cert.pem"
 
@@ -448,7 +448,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
         port => 6984
         timeout => 2000
         always_reconnect => false
-        sincedb_path => "#{sincedb}"
+        sequence_path => "#{sequence}"
         type => "couchdb"
         secure => true
         ca_file => "#{ca_file}"

@@ -13,11 +13,9 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
   milestone 1
 
   # IP or hostname of your CouchDB instance
-  # Default: localhost
   config :host, :validate => :string, :default => "localhost"
 
-  # Port of your CouchDB instance
-  # Default: 5984
+  # Port of your CouchDB instance.
   config :port, :validate => :number, :default => 5984
 
   # The CouchDB db to connect to.
@@ -45,79 +43,66 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
   # setting is not recommended unless you know what you are doing.
   config :heartbeat, :validate => :number, :default => 1000
 
-  # Where to write the sincedb database (keeps track of the last
-  # sequence of in the _changes stream). The default will write
-  # to a file matching "$HOME/.couchdb_seq"
-  config :sincedb_path, :validate => :string
+  # File path where the last sequence number in the _changes
+  # stream is stored. If unset it will write to "$HOME/.couchdb_seq"
+  config :sequence_path, :validate => :string
 
   # If unspecified, Logstash will attempt to read the last sequence number
-  # from the sincedb file.  If that is empty or non-existent, it will 
+  # from the `sequence_path` file.  If that is empty or non-existent, it will
   # begin with 0 (the beginning).
   # 
   # If you specify this value, it is anticipated that you will 
   # only be doing so for an initial read under special circumstances
-  # and that you will change this value back to nil after that
-  # special ingest.
-  config :initial_sequence, :validate => :number, :default => nil
+  # and that you will unset this value afterwards.
+  config :initial_sequence, :validate => :number
   
   # Preserve the CouchDB document revision "_rev" value in the
   # output.
-  # Default: false
   config :keep_revision, :validate => :boolean, :default => false
   
   # Future feature! Until implemented, changing this from the default 
   # will not do anything.
   #
-  # Ignore attachments associated with CouchDB documents. Default: True
+  # Ignore attachments associated with CouchDB documents.
   config :ignore_attachments, :validate => :boolean, :default => true
   
-  # Add type, tags, and add_field values to each event.
-  #
-  # Disabling this may only be desirable if you are passing all 
-  # documents straight through to Elasticsearch with no filters
-  # Default: true
-  config :decorate_event, :validate => :boolean, :default => true
-  
   # Reconnect flag.  When true, always try to reconnect after a failure
-  # Default: true
   config :always_reconnect, :validate => :boolean, :default => true
   
   # Reconnect delay: time between reconnect attempts, in seconds.
-  # Default: 10
   config :reconnect_delay, :validate => :number, :default => 10
   
   # Timeout: Number of milliseconds to wait for new data before
   # terminating the connection.  If a timeout is set it will disable
   # the heartbeat configuration option.
-  # Default: nil
   config :timeout, :validate => :number
 
   public
   def register
     require "logstash/util/buftok"
-    if @sincedb_path.nil?
+    if @sequence_path.nil?
       if ENV["HOME"].nil?
         @logger.error("No HOME environment variable set, I don't know where " \
                       "to keep track of the files I'm watching. Either set " \
-                      "HOME in your environment, or set sincedb_path in " \
+                      "HOME in your environment, or set sequence_path in " \
                       "in your Logstash config.")
         raise 
       end
-      sincedb_dir = ENV["HOME"]
-      @sincedb_path = File.join(sincedb_dir, ".couchdb_seq")
+      default_dir = ENV["HOME"]
+      @sequence_path = File.join(default_dir, ".couchdb_seq")
 
-      @logger.info("No sincedb_path set, generating one...",
-                   :sincedb_path => @sincedb_path)
+      @logger.info("No sequence_path set, generating one...",
+                   :sequence_path => @sequence_path)
     end
 
-    @sincedb      = SinceDB::File.new(@sincedb_path)
+    @sequencedb   = SequenceDB::File.new(@sequence_path)
     @feed         = 'continuous'
     @include_docs = 'true'
     @path         = '/' + @db + '/_changes'
 
     @scheme = @secure ? 'https' : 'http'
 
-    @since = @initial_sequence ? @initial_sequence : @sincedb.read
+    @sequence = @initial_sequence ? @initial_sequence : @sequencedb.read
 
     if !@username.nil? && !@password.nil?
       @userinfo = @username + ':' + @password.value
@@ -127,19 +112,19 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
     
   end
   
-  module SinceDB
+  module SequenceDB
     class File
       def initialize(file)
-        @sincedb_path = file
+        @sequence_path = file
       end
 
       def read
-        ::File.exists?(@sincedb_path) ? ::File.read(@sincedb_path).chomp.strip : 0
+        ::File.exists?(@sequence_path) ? ::File.read(@sequence_path).chomp.strip : 0
       end
 
-      def write(since = nil)
-        since = 0 if since.nil?
-        ::File.write(@sincedb_path, since.to_s)
+      def write(sequence = nil)
+        sequence = 0 if sequence.nil?
+        ::File.write(@sequence_path, sequence.to_s)
       end
     end
   end
@@ -158,11 +143,11 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
             next if changes.chomp.empty?
             event = build_event(changes)
             @logger.debug("event", :event => event.to_hash_with_metadata) if @logger.debug?
-            decorate(event) if @decorate_event
+            decorate(event)
             unless event["empty"]
               queue << event
-              @since = event['@metadata']['seq']
-              @sincedb.write(@since.to_s)
+              @sequence = event['@metadata']['seq']
+              @sequencedb.write(@sequence.to_s)
             end
           end
         end
@@ -182,7 +167,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
   
   private
   def build_uri
-    options = {:feed => @feed, :include_docs => @include_docs, :since => @since}
+    options = {:feed => @feed, :include_docs => @include_docs, :since => @sequence}
     options = options.merge(@timeout ? {:timeout => @timeout} : {:heartbeat => @heartbeat})
     URI::HTTP.build(:scheme => @scheme, :userinfo => @userinfo, :host => @host, :port => @port, :path => @path, :query => URI.encode_www_form(options))
   end
