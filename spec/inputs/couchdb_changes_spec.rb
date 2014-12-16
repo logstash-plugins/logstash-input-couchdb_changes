@@ -9,10 +9,12 @@ module Helpers
     ftw = FTW::Agent.new
     ftw.put!("http://127.0.0.1:5984/db")
   end
+
   def deletedb
     ftw = FTW::Agent.new
     ftw.delete!("http://127.0.0.1:5984/db")
   end
+
   def populatedb
     ftw = FTW::Agent.new
     ftw.put!("http://127.0.0.1:5984/db/1", :body => '{"name":"Peter Parker"}')
@@ -26,6 +28,7 @@ module Helpers
     ftw.put!("http://127.0.0.1:5984/db/9", :body => '{"name":"Ben Parker"}')
     ftw.put!("http://127.0.0.1:5984/db/10", :body => '{"name":"Stan Lee"}')
   end
+
   def updatedocs
     ftw = FTW::Agent.new
     data = ""
@@ -51,6 +54,7 @@ module Helpers
       end
     end
   end
+
   def deletedoc
     ftw = FTW::Agent.new
     data = ""
@@ -59,10 +63,12 @@ module Helpers
     doc = LogStash::Json.load(data)
     ftw.delete!("http://127.0.0.1:5984/db/9?rev=#{doc["_rev"]}")
   end
+
   def createuser
     ftw = FTW::Agent.new
     ftw.put!("http://127.0.0.1:5984/_config/admins/logstash", :body => '"logstash"')
   end
+
   def deleteuser
     user = "logstash"
     pass = "logstash"
@@ -70,10 +76,12 @@ module Helpers
     ftw = FTW::Agent.new
     ftw.delete!("http://#{auth}127.0.0.1:5984/_config/admins/logstash")
   end
+
   def deleteindex
     ftw = FTW::Agent.new
     ftw.delete!("http://127.0.0.1:9200/couchdb_test")
   end
+
   def buildup
     # BEGIN: The following calls are a safety net in case of an aborted test
     deleteuser
@@ -82,6 +90,7 @@ module Helpers
     createdb
     populatedb
   end
+
   def teardown
     deletedb
     deleteindex
