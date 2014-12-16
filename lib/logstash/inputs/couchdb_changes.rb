@@ -140,6 +140,8 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
         raise ArgumentError, "Database not found!" if response.code == "404"
         response.read_body do |chunk|
           buffer.extract(chunk).each do |changes|
+            # If no changes come since the last heartbeat period, a blank line is
+            # sent as a sort of keep-alive.  We should ignore those.
             next if changes.chomp.empty?
             event = build_event(changes)
             @logger.debug("event", :event => event.to_hash_with_metadata) if @logger.debug?
@@ -158,7 +160,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
     @logger.error("Connection problem encountered: Retrying connection in 10 seconds...", :error => e.to_s)
     retry if reconnect?
   rescue Errno::EBADF => e
-    @logger.error("Connction refused due to bad file descriptor: ", :error => e.to_s)
+    @logger.error("Unable to connect: Bad file descriptor: ", :error => e.to_s)
     retry if reconnect?
   rescue ArgumentError => e
     @logger.error("Unable to connect to database", :db => @db, :error => e.to_s)
