@@ -65,6 +65,12 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
   # Default: false
   config :keep_revision, :validate => :boolean, :default => false
   
+  # Future feature! Until implemented, changing this from the default 
+  # will not do anything.
+  #
+  # Ignore attachments associated with CouchDB documents. Default: True
+  config :ignore_attachments, :validate => :boolean, :default => true
+  
   # Add type, tags, and add_field values to each event.
   #
   # Disabling this may only be desirable if you are passing all 
@@ -146,6 +152,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
     Net::HTTP.start(@host, @port, :use_ssl => (@secure == true), :ca_file => @ca_file) do |http|
       request = Net::HTTP::Get.new(uri.request_uri)
       http.request request do |response|
+        raise ArgumentError, "Database not found!" if response.code == "404"
         response.read_body do |chunk|
           buffer.extract(chunk).each do |changes|
             next if changes.chomp.empty?
@@ -165,11 +172,12 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
     Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
     @logger.error("Connection problem encountered: Retrying connection in 10 seconds...", :error => e.to_s)
     retry if reconnect?
-  rescue Errno::EBADF => f
-    @logger.error("Connction refused due to bad file descriptor: ", :error => f.to_s)
+  rescue Errno::EBADF => e
+    @logger.error("Connction refused due to bad file descriptor: ", :error => e.to_s)
     retry if reconnect?
-  rescue Interrupt
-    @logger.info("Received SIGTERM. Shutting down...")
+  rescue ArgumentError => e
+    @logger.error("Unable to connect to database", :db => @db, :error => e.to_s)
+    retry if reconnect?
   end
   
   private
