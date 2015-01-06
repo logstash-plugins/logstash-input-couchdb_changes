@@ -356,13 +356,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
       data = ""
       response.read_body { |chunk| data << chunk }
       result = LogStash::Json.load(data)
-      found = false
-      result["hits"]["hits"].each do |doc|
-        if doc["_id"] == "9"
-          found = true
-        end
-      end
-      insist { found } == false
+      insist { result["hits"]["hits"] }.any? { |doc| doc["_id"] == "9" }
     end
     
     after do
@@ -423,12 +417,11 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
       data = ""
       response.read_body { |chunk| data << chunk }
       result = LogStash::Json.load(data)
-      result["hits"]["hits"].each do |doc|
-        case doc["_id"]
-        when 3
-          insist { doc["_source"]["name"] } == "Captain America"
-        end
-      end
+      doc3 = result["hits"]["hits"].find { |doc| doc["_id"] == "3" }
+      # Make sure it's found
+      reject { doc3 }.nil?
+      # verify the 'name' field
+      insist { doc3["_source"]["name"] } == "Captain America"
     end
     
     after do
@@ -488,12 +481,11 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
       data = ""
       response.read_body { |chunk| data << chunk }
       result = LogStash::Json.load(data)
-      result["hits"]["hits"].each do |doc|
-        case doc["_id"]
-        when 8
-          insist { doc["_source"]["name"] } == "Norman Osborne"
-        end
-      end
+      doc8 = result["hits"]["hits"].find { |doc| doc["_id"] == "8" }
+      # Make sure it's found
+      reject { doc8 }.nil?
+      # verify the 'name' field
+      insist { doc8["_source"]["name"] } == "Norman Osborne"
     end
 
     after do

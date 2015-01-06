@@ -76,6 +76,10 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
   # terminating the connection.  If a timeout is set it will disable
   # the heartbeat configuration option.
   config :timeout, :validate => :number
+  
+  # Declare these constants here.
+  FEED          = 'continuous'
+  INCLUDEDOCS   = 'true'
 
   public
   def register
@@ -86,7 +90,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
                       "to keep track of the files I'm watching. Either set " \
                       "HOME in your environment, or set sequence_path in " \
                       "in your Logstash config.")
-        raise 
+        raise ArgumentError
       end
       default_dir = ENV["HOME"]
       @sequence_path = File.join(default_dir, ".couchdb_seq")
@@ -96,15 +100,13 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
     end
 
     @sequencedb   = SequenceDB::File.new(@sequence_path)
-    @feed         = 'continuous'
-    @include_docs = 'true'
     @path         = '/' + @db + '/_changes'
 
     @scheme = @secure ? 'https' : 'http'
 
     @sequence = @initial_sequence ? @initial_sequence : @sequencedb.read
 
-    if !@username.nil? && !@password.nil?
+    if @username && @password
       @userinfo = @username + ':' + @password.value
     else
       @userinfo = nil
@@ -143,13 +145,12 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
             # If no changes come since the last heartbeat period, a blank line is
             # sent as a sort of keep-alive.  We should ignore those.
             next if changes.chomp.empty?
-            event = build_event(changes)
-            @logger.debug("event", :event => event.to_hash_with_metadata) if @logger.debug?
-            decorate(event)
-            unless event["empty"]
-              queue << event
-              @sequence = event['@metadata']['seq']
-              @sequencedb.write(@sequence.to_s)
+            if event = build_event(changes)
+              @logger.debug("event", :event => event.to_hash_with_metadata) if @logger.debug? 
+              decorate(event) 
+              queue << event 
+              @sequence = event['@metadata']['seq'] 
+              @sequencedb.write(@sequence.to_s) 
             end
           end
         end
@@ -169,7 +170,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
   
   private
   def build_uri
-    options = {:feed => @feed, :include_docs => @include_docs, :since => @sequence}
+    options = {:feed => FEED, :include_docs => INCLUDEDOCS, :since => @sequence}
     options = options.merge(@timeout ? {:timeout => @timeout} : {:heartbeat => @heartbeat})
     URI::HTTP.build(:scheme => @scheme, :userinfo => @userinfo, :host => @host, :port => @port, :path => @path, :query => URI.encode_www_form(options))
   end
@@ -184,7 +185,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
   def build_event(line)
     # In lieu of a codec, build the event here
     line = LogStash::Json.load(line)
-    return LogStash::Event.new({"empty" => true}) if line.has_key?("last_seq")
+    return nil if line.has_key?("last_seq")
     hash = Hash.new
     hash['@metadata'] = { '_id' => line['doc']['_id'] }
     if line['doc']['_deleted']
