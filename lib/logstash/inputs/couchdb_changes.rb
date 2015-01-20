@@ -10,7 +10,6 @@ require "uri"
 # document deletion.
 class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
   config_name "couchdb_changes"
-  milestone 1
 
   # IP or hostname of your CouchDB instance
   config :host, :validate => :string, :default => "localhost"
