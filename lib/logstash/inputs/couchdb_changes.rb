@@ -5,9 +5,17 @@ require "logstash/namespace"
 require "net/http"
 require "uri"
 
-# Stream events from the CouchDB _changes URI.
-# Use event metadata to allow for upsert and
-# document deletion.
+# This CouchDB input allows you to automatically stream events from the 
+# CouchDB http://guide.couchdb.org/draft/notifications.html[_changes] URI.
+# Moreover, any "future" changes will automatically be streamed as well making it easy to synchronize
+# your CouchDB data with any target destination
+#
+# ### Upsert and delete
+# You can use event metadata to allow for upsert and document deletion.
+#
+# ### Starting at a Specific Sequence
+# The CouchDB input stores the last sequence number value in location defined by `sequence_path`.
+# You can use this fact to start or resume the stream at a particular sequence.
 class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
   config_name "couchdb_changes"
 
@@ -43,7 +51,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
   config :heartbeat, :validate => :number, :default => 1000
 
   # File path where the last sequence number in the _changes
-  # stream is stored. If unset it will write to "$HOME/.couchdb_seq"
+  # stream is stored. If unset it will write to `$HOME/.couchdb_seq`
   config :sequence_path, :validate => :string
 
   # If unspecified, Logstash will attempt to read the last sequence number
