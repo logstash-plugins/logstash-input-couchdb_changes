@@ -11,7 +11,8 @@ require "uri"
 # your CouchDB data with any target destination
 #
 # ### Upsert and delete
-# You can use event metadata to allow for upsert and document deletion.
+# You can use event metadata to allow for document deletion. 
+# All non-delete operations are treated as upserts
 #
 # ### Starting at a Specific Sequence
 # The CouchDB input stores the last sequence number value in location defined by `sequence_path`.
