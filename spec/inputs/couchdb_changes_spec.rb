@@ -5,6 +5,13 @@ require "logstash/json"
 require "logstash/inputs/couchdb_changes"
 
 module Helpers
+  USERNAME = "logstash"
+  PASSWORD = "logstash"
+
+  def auth
+    "#{USERNAME}:#{PASSWORD}@"
+  end
+
   def createdb
     ftw = FTW::Agent.new
     ftw.put!("http://127.0.0.1:5984/db")
@@ -66,15 +73,17 @@ module Helpers
 
   def createuser
     ftw = FTW::Agent.new
-    ftw.put!("http://127.0.0.1:5984/_config/admins/logstash", :body => '"logstash"')
+    ftw.put!("http://127.0.0.1:5984/_config/admins/#{USERNAME}", :body => "\"#{PASSWORD}\"")
   end
 
   def deleteuser
-    user = "logstash"
-    pass = "logstash"
-    auth = "#{user}:#{pass}@"
     ftw = FTW::Agent.new
-    ftw.delete!("http://#{auth}127.0.0.1:5984/_config/admins/logstash")
+    ftw.delete!("http://#{auth}127.0.0.1:5984/_config/admins/#{USERNAME}")
+  end
+
+  def addmember
+    ftw = FTW::Agent.new
+    ftw.put!("http://#{auth}127.0.0.1:5984/db/_security", :body => "{\"members\":{ \"names\":[\"#{USERNAME}\"]}}")
   end
 
   def deleteindex
@@ -98,7 +107,7 @@ module Helpers
     File.delete(sequence) if File.exist?(sequence)
   end
 end
-    
+
 describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
   describe "Load couchdb documents", :elasticsearch => true, :couchdb => true do
     include Helpers
@@ -132,7 +141,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
       }
     }
     CONFIG
-      
+
     agent do
       # Verify the count
       ftw.post!("http://127.0.0.1:9200/#{index}/_refresh")
@@ -166,7 +175,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
       teardown
     end
   end
-    
+
   describe "Test document updates", :elasticsearch => true, :couchdb => true do
     include Helpers
     sequence = "/tmp/.couchdb_seq"
@@ -200,7 +209,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
       }
     }
     CONFIG
-      
+
     agent do
       # Verify the count (which should still be 10)
       ftw.post!("http://127.0.0.1:9200/#{index}/_refresh")
@@ -237,7 +246,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
     include Helpers
     sequence = "/tmp/.couchdb_seq"
     index = "couchdb_test"
-    
+
     ftw = FTW::Agent.new
 
     config <<-CONFIG
@@ -317,7 +326,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
       buildup
       deletedoc # from CouchDB
     end
-    
+
     ftw = FTW::Agent.new
 
     config <<-CONFIG
@@ -341,7 +350,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
       }
     }
     CONFIG
-    
+
     agent do
       # Verify the count (should now be 9)
       ftw.post!("http://127.0.0.1:9200/#{index}/_refresh")
@@ -358,7 +367,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
       result = LogStash::Json.load(data)
       insist { result["hits"]["hits"] }.any? { |doc| doc["_id"] == "9" }
     end
-    
+
     after do
       teardown
     end
@@ -367,14 +376,14 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
 
   describe "Test authenticated connectivity", :elasticsearch => true, :couchdb => true do
     include Helpers
-    user = "logstash"
-    pass = "logstash"
     sequence = "/tmp/.couchdb_seq"
     index = "couchdb_test"
+
 
     before do
       buildup
       createuser
+      addmember
     end
 
     ftw = FTW::Agent.new
@@ -388,8 +397,8 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
         always_reconnect => false
         sequence_path => "#{sequence}"
         type => "couchdb"
-        username => "#{user}"
-        password => "#{pass}"
+        username => "#{Helpers::USERNAME}"
+        password => "#{Helpers::PASSWORD}"
       }
     }
     output {
@@ -402,7 +411,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
       }
     }
     CONFIG
-      
+
     agent do
       # Verify the count
       ftw.post!("http://127.0.0.1:9200/#{index}/_refresh")
@@ -423,7 +432,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
       # verify the 'name' field
       insist { doc3["_source"]["name"] } == "Captain America"
     end
-    
+
     after do
       deleteuser
       teardown
@@ -466,7 +475,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
       }
     }
     CONFIG
-      
+
     agent do
       # Verify the count
       ftw.post!("http://127.0.0.1:9200/#{index}/_refresh")
@@ -492,7 +501,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
       teardown
     end
   end
-  
+
 end
 
 
