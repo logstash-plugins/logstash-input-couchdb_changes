@@ -30,6 +30,9 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
   # Required parameter.
   config :db, :validate => :string, :required => true
 
+  # The CouchDB filter parameter
+  config :filter, :validate => :string
+  
   # Connect to CouchDB's _changes feed securely (via https)
   # Default: false (via http)
   config :secure, :validate => :boolean, :default => false
@@ -176,6 +179,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
   def build_uri
     options = {:feed => FEED, :include_docs => INCLUDEDOCS, :since => @sequence}
     options = options.merge(@timeout ? {:timeout => @timeout} : {:heartbeat => @heartbeat})
+    options = options.merge(@filter ? {:filter => @filter} : {})
     URI::HTTP.build(:scheme => @scheme, :host => @host, :port => @port, :path => @path, :query => URI.encode_www_form(options))
   end
 
