@@ -109,6 +109,17 @@ module Helpers
 end
 
 describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
+  describe LogStash::Inputs::CouchDBChanges do
+    #include Helpers
+    it_behaves_like "an interruptible input plugin" do
+      let(:config) {
+        {
+          "db" => "db"
+        }
+      }
+    end
+  end
+
   describe "Load couchdb documents", :elasticsearch => true, :couchdb => true do
     include Helpers
     sequence = "/tmp/.couchdb_seq"
@@ -503,6 +514,3 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
   end
 
 end
-
-
-
