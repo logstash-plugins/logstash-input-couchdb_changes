@@ -110,11 +110,18 @@ end
 
 describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
   describe LogStash::Inputs::CouchDBChanges do
-    #include Helpers
+    include Helpers
+    sequence = "/tmp/.couchdb_seq"
+
+    before do
+      buildup
+    end
+
     it_behaves_like "an interruptible input plugin" do
       let(:config) {
         {
-          "db" => "db"
+          "db" => "db", "timeout" => 2000, "always_reconnect" => false,
+          "sequence_path" => "#{sequence}", "host" => "127.0.0.1"
         }
       }
     end
