@@ -191,12 +191,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
   private
   def reconnect?
     # Loop each second so stop? can work its magic
-    if @always_reconnect
-      for i in 0..@reconnect_delay
-        break if stop?
-        sleep(1)
-      end
-    end
+    @reconnect_delay.times { sleep(1) unless stop? } if @always_reconnect
     @always_reconnect
   end
 
