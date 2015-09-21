@@ -21,6 +21,7 @@ Gem::Specification.new do |s|
 
   # Gem dependencies
   s.add_runtime_dependency "logstash-core", '>= 1.4.0', '< 2.0.0'
+  s.add_runtime_dependency "stud", '>= 0.0.22'
   s.add_runtime_dependency 'logstash-codec-plain'
   s.add_runtime_dependency 'json'
 

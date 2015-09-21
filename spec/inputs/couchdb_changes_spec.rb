@@ -120,7 +120,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
     it_behaves_like "an interruptible input plugin" do
       let(:config) {
         {
-          "db" => "db", "timeout" => 2000, "always_reconnect" => false,
+          "db" => "db", "timeout" => 1000, "always_reconnect" => true,
           "sequence_path" => "#{sequence}", "host" => "127.0.0.1"
         }
       }
