@@ -94,13 +94,13 @@ module Helpers
   def buildup
     # BEGIN: The following calls are a safety net in case of an aborted test
     deleteuser
-    teardown
+    close
     # END
     createdb
     populatedb
   end
 
-  def teardown
+  def close
     deletedb
     deleteindex
     sequence = "/tmp/.couchdb_seq"
@@ -190,7 +190,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
       end
     end
     after do
-      teardown
+      close
     end
   end
 
@@ -255,7 +255,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
     end
 
     after do
-      teardown
+      close
     end
 
   end
@@ -330,7 +330,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
     end
 
     after do
-      teardown
+      close
     end
 
   end
@@ -387,7 +387,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
     end
 
     after do
-      teardown
+      close
     end
 
   end
@@ -453,7 +453,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
 
     after do
       deleteuser
-      teardown
+      close
     end
   end
 
@@ -516,7 +516,7 @@ describe "inputs/couchdb_changes", :elasticsearch => true, :couchdb => true do
     end
 
     after do
-      teardown
+      close
     end
   end
 
