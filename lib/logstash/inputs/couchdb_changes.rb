@@ -195,22 +195,22 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
   end
 
   private
-  def build_event(line)
+  def build_event(changes)
     # In lieu of a codec, build the event here
-    line = LogStash::Json.load(line)
-    return nil if line.has_key?("last_seq")
+    data = LogStash::Json.load(changes)
+    return nil if data.has_key?("last_seq")
     hash = Hash.new
-    hash['@metadata'] = { '_id' => line['doc']['_id'] }
-    if line['doc']['_deleted']
+    hash['@metadata'] = { '_id' => data['doc']['_id'] }
+    if data['doc']['_deleted']
       hash['@metadata']['action'] = 'delete'
     else
-      hash['doc'] = line['doc']
+      hash['doc'] = data['doc']
       hash['@metadata']['action'] = 'update'
       hash['doc'].delete('_id')
       hash['doc_as_upsert'] = true
       hash['doc'].delete('_rev') unless @keep_revision
     end
-    hash['@metadata']['seq'] = line['seq']
+    hash['@metadata']['seq'] = data['seq']
     event = LogStash::Event.new(hash)
     @logger.debug("event", :event => event.to_hash_with_metadata) if @logger.debug?
     event
