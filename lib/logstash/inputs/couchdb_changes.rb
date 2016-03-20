@@ -199,6 +199,10 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
     # In lieu of a codec, build the event here
     data = LogStash::Json.load(changes)
     return nil if data.has_key?("last_seq")
+    if data['doc'].nil?
+      logger.debug("doc is nil", :data => data)
+      return nil
+    end
     hash = Hash.new
     hash['@metadata'] = { '_id' => data['doc']['_id'] }
     if data['doc']['_deleted']
