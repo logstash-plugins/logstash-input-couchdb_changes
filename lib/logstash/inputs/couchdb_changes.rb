@@ -193,7 +193,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
 
   private
   def reconnect?
-    Stud.stoppable_sleep(@connect_retry_interval) if @always_reconnect
+    Stud.stoppable_sleep(@reconnect_delay) if @always_reconnect
     @always_reconnect
   end
 
