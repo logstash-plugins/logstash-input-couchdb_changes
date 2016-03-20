@@ -145,7 +145,10 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
           request = Net::HTTP::Get.new(uri.request_uri)
           request.basic_auth(@username, @password.value) if @username && @password
           http.request request do |response|
-            raise ArgumentError, "Database not found!" if response.code == "404"
+            raise ArgumentError, :message => "Server error!", :response_code => response.code if response.code >= "500"
+            raise ArgumentError, :message => "Authentication error!", :response_code => response.code if response.code == "401"
+            raise ArgumentError, :message => "Database not found!", :response_code => response.code if response.code == "404"
+            raise ArgumentError, :message => "Request error!", :response_code => response.code if response.code >= "400"
             response.read_body do |chunk|
               buffer.extract(chunk).each do |changes|
                 # Put a "stop" check here. If we stop here, anything we've read, but
