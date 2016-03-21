@@ -138,6 +138,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
     buffer = FileWatch::BufferedTokenizer.new
     @logger.info("Connecting to CouchDB _changes stream at:", :host => @host.to_s, :port => @port.to_s, :db => @db)
     uri = build_uri
+    @logger.info("Using service uri :", :uri => uri)
     until stop?
       begin
         Net::HTTP.start(@host, @port, :use_ssl => (@secure == true), :ca_file => @ca_file) do |http|
