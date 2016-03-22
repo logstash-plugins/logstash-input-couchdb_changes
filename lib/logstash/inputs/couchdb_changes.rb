@@ -112,7 +112,16 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
 
     @scheme = @secure ? 'https' : 'http'
 
-    @sequence = @initial_sequence ? @initial_sequence : @sequencedb.read
+    if !@initial_sequence.nil?
+      @logger.info("initial_sequence is set, writing to filesystem ...",
+                   :initial_sequence => @initial_sequence, :sequence_path => @sequence_path)
+      @sequencedb.write(@initial_sequence)
+      @sequence = @initial_sequence
+    else
+      @logger.info("No initial_sequence set, reading from filesystem ...",
+                   :sequence_path => @sequence_path)
+      @sequence = @sequencedb.read
+    end
 
   end
 
