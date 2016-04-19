@@ -168,7 +168,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
           end
         end
       rescue Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, EOFError, Errno::EHOSTUNREACH, Errno::ECONNREFUSED,
-        Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
+        Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError, SocketError => e
         @logger.error("Connection problem encountered: Retrying connection in 10 seconds...", :error => e.to_s)
         retry if reconnect?
       rescue Errno::EBADF => e
