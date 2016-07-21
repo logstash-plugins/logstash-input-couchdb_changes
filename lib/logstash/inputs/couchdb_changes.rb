@@ -64,6 +64,10 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
   # and that you will unset this value afterwards.
   config :initial_sequence, :validate => :number
 
+  # Preserve the CouchDB document id "_id" value in the
+  # output.
+  config :keep_id, :validate => :boolean, :default => false
+
   # Preserve the CouchDB document revision "_rev" value in the
   # output.
   config :keep_revision, :validate => :boolean, :default => false
@@ -223,7 +227,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
     else
       hash['doc'] = data['doc']
       hash['@metadata']['action'] = 'update'
-      hash['doc'].delete('_id')
+      hash['doc'].delete('_id') unless @keep_id
       hash['doc_as_upsert'] = true
       hash['doc'].delete('_rev') unless @keep_revision
     end
