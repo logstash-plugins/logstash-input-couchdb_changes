@@ -1,3 +1,9 @@
+## 3.1.0
+  - Fail fast on permission denied accessing the sequence file
+  - Introduced new config 'keep_id'
+  - Fixed hard coded delay in error message
+  - CouchDB hostname resolution failure support
+
 ## 3.0.2
   - Relax constraint on logstash-core-plugin-api to >= 1.60 <= 2.99
 

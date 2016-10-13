@@ -64,6 +64,10 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
   # and that you will unset this value afterwards.
   config :initial_sequence, :validate => :number
 
+  # Preserve the CouchDB document id "_id" value in the
+  # output.
+  config :keep_id, :validate => :boolean, :default => false
+
   # Preserve the CouchDB document revision "_rev" value in the
   # output.
   config :keep_revision, :validate => :boolean, :default => false
@@ -112,7 +116,16 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
 
     @scheme = @secure ? 'https' : 'http'
 
-    @sequence = @initial_sequence ? @initial_sequence : @sequencedb.read
+    if !@initial_sequence.nil?
+      @logger.info("initial_sequence is set, writing to filesystem ...",
+                   :initial_sequence => @initial_sequence, :sequence_path => @sequence_path)
+      @sequencedb.write(@initial_sequence)
+      @sequence = @initial_sequence
+    else
+      @logger.info("No initial_sequence set, reading from filesystem ...",
+                   :sequence_path => @sequence_path)
+      @sequence = @sequencedb.read
+    end
 
   end
 
@@ -172,8 +185,8 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
           end
         end
       rescue Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, EOFError, Errno::EHOSTUNREACH, Errno::ECONNREFUSED,
-        Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
-        @logger.error("Connection problem encountered: Retrying connection in 10 seconds...", :error => e.to_s)
+        Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError, SocketError => e
+        @logger.error("Connection problem encountered: Retrying connection in " + @reconnect_delay.to_s + " seconds...", :error => e.to_s, :host => @host.to_s, :port => @port.to_s, :db => @db)
         retry if reconnect?
       rescue Errno::EBADF => e
         @logger.error("Unable to connect: Bad file descriptor: ", :error => e.to_s)
@@ -214,7 +227,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
     else
       hash['doc'] = data['doc']
       hash['@metadata']['action'] = 'update'
-      hash['doc'].delete('_id')
+      hash['doc'].delete('_id') unless @keep_id
       hash['doc_as_upsert'] = true
       hash['doc'].delete('_rev') unless @keep_revision
     end
