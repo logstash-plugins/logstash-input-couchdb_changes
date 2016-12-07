@@ -177,7 +177,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
                   @logger.debug("event", :event => event.to_hash_with_metadata) if @logger.debug?
                   decorate(event)
                   queue << event
-                  @sequence = event['@metadata']['seq']
+                  @sequence = event.get("[@metadata][seq]")
                   @sequencedb.write(@sequence.to_s)
                 end
               end
