@@ -1,3 +1,6 @@
+## 3.1.1
+  - Use the new Logstash 5.0 Event api to get the values #37
+
 ## 3.1.0
   - Fail fast on permission denied accessing the sequence file
   - Introduced new config 'keep_id'
