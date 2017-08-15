@@ -1,3 +1,6 @@
+## 3.1.3
+  - Fix some documentation issues
+
 ## 3.1.1
   - Use the new Logstash 5.0 Event api to get the values #37
 
