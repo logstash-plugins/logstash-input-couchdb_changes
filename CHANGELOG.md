@@ -1,3 +1,6 @@
+## 3.1.6
+  - Fixed formatting in doc
+
 ## 3.1.5
   - Docs: Set the default_codec doc attribute.
 
