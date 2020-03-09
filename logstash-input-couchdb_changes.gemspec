@@ -26,7 +26,8 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'json'
 
   s.add_development_dependency 'ftw', '~> 0.0.42'
-  s.add_development_dependency 'logstash-devutils', '>= 0.0.6'
+  s.add_development_dependency 'logstash-devutils'
+  s.add_development_dependency 'insist'
   s.add_development_dependency 'logstash-output-elasticsearch'
 
 end
