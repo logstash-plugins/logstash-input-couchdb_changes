@@ -50,13 +50,13 @@ It must be running on 127.0.0.1:9200
 
 ### Execute the tests
 
-The tests can be run with `bundle exec rspec -t elasticsearch`.  Adding `-f d` shows more detail.
+The tests can be run with `bundle exec rspec -t elasticsearch -t couchdb`.  Adding `-f d` shows more detail.
 
 ```
-bundle exec rspec -t elasticsearch -f d
+bundle exec rspec -t elasticsearch -t couchdb -f d
 Using Accessor#strict_set for specs
 Run options:
-  include {:elasticsearch=>true}
+  include {:elasticsearch=>true, :couchdb=>true}
   exclude {:redis=>true, :socket=>true, :performance=>true, :elasticsearch_secure=>true, :broken=>true, :export_cypher=>true, :integration=>true}
 
 inputs/couchdb_changes
