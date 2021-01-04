@@ -1,6 +1,6 @@
 # Logstash Plugin
 
-[![Travis Build Status](https://travis-ci.org/logstash-plugins/logstash-input-couchdb_changes.svg)](https://travis-ci.org/logstash-plugins/logstash-input-couchdb_changes)
+[![Travis Build Status](https://travis-ci.com/logstash-plugins/logstash-input-couchdb_changes.svg)](https://travis-ci.com/logstash-plugins/logstash-input-couchdb_changes)
 
 This is a plugin for [Logstash](https://github.com/elastic/logstash).
 
