@@ -132,16 +132,29 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
   module SequenceDB
     class File
       def initialize(file)
-        @sequence_path = file
+        @uri = URI.parse(file)
+        if @uri.scheme == "redis"
+          @entry = @uri.path.split(File::SEPARATOR)[-1]
+          @uri.path = @uri.path.split(File::SEPARATOR)[0...-1].join(File::Separator)
+          @client = Redis.new(url: @uri)
+        end
       end
 
       def read
-        ::File.exists?(@sequence_path) ? ::File.read(@sequence_path).chomp.strip : 0
+        if @uri.scheme.nil?
+          ::File.exists?(@sequence_path) ? ::File.read(@sequence_path).chomp.strip : 0
+        elsif @uri.scheme == "redis"
+          @client.get(@entry)
+        end
       end
 
       def write(sequence = nil)
         sequence = 0 if sequence.nil?
-        ::File.write(@sequence_path, sequence.to_s)
+        if @uri.scheme.nil?
+          ::File.write(@sequence_path, sequence.to_s)
+        elsif @uri.scheme == "redis"
+          @client.set(@entry, sequence)
+        end
       end
     end
   end
