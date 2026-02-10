@@ -1,3 +1,6 @@
+## 3.1.7
+  - Fix: replace deprecated `File.exists?` with `File.exist?` for Ruby 3.4 (JRuby 10) compatibility [#52](https://github.com/logstash-plugins/logstash-input-couchdb_changes/pull/52)
+
 ## 3.1.6
   - Fixed formatting in doc
 

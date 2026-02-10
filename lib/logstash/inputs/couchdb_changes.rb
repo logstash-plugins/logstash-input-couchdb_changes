@@ -136,7 +136,7 @@ class LogStash::Inputs::CouchDBChanges < LogStash::Inputs::Base
       end
 
       def read
-        ::File.exists?(@sequence_path) ? ::File.read(@sequence_path).chomp.strip : 0
+        ::File.exist?(@sequence_path) ? ::File.read(@sequence_path).chomp.strip : 0
       end
 
       def write(sequence = nil)
