@@ -26,6 +26,12 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'json'
 
   s.add_development_dependency 'ftw', '~> 0.0.42'
+  # ftw depends on http_parser.rb without a version constraint. Pin to 0.6.x so
+  # bundler resolves the precompiled java-platform gem instead of upgrading to a
+  # source-only release (0.8.1) that fails to compile in the CI image (no toolchain).
+  # 0.6.0 is the last release shipping a -java gem; see
+  # https://github.com/tmm1/http_parser.rb/issues/72
+  s.add_development_dependency 'http_parser.rb', '~> 0.6.0'
   s.add_development_dependency 'logstash-devutils'
   s.add_development_dependency 'insist'
   s.add_development_dependency 'logstash-output-elasticsearch'
